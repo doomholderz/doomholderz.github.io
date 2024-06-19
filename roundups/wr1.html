@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>doomholderz - Week Roundup #1: June 17th - June 23rd</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 id="week-roundup-1-june-17th---june-23rd">Week Roundup #1:
+        June 17th - June 23rd</h1>
+        <h3 id="tldr-week-highlights">tl;dr Week Highlights</h3>
+        <h3 id="monday-17th-june">Monday 17th June</h3>
+        <ul>
+        <li><p><strong>Worked on a process for testing and deploying
+        custom seccomp profiles</strong></p>
+        <ul>
+        <li><p>Future work could be to automate testing of custom
+        seccomp profile in a Kubernetes Pod via a CLI tool,
+        requiring:</p>
+        <ol type="1">
+        <li>Automatic discovery of a candidate Node in a cluster
+        (available Pod space)</li>
+        <li>Auto-labeling the candidate Node
+        (e.g. <code>seccomp-custom=true</code>)</li>
+        <li>Adding custom profile to the Node in
+        <code>/var/lib/kubelet/seccomp-profiles/&lt;custom_profile_name&gt;.json</code></li>
+        <li>Generating Pod manifest with <code>nodeSelector</code> set
+        to candidate Node’s label, and <code>localhostProfile</code>
+        being set to profile filename</li>
+        </ol></li>
+        </ul></li>
+        </ul>
+    </div>
+</body>
+</html>

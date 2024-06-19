@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>doomholderz - Runtime Security - Pragmatic Container Security
+Guide</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="container">
+        <h1
+        id="guide-to-pragmatic-container-security---runtime-security">Guide
+        to Pragmatic Container Security - Runtime Security</h1>
+        <h3 id="intro">Intro</h3>
+        <p>Runtime security is all about protecting your running
+        containers.</p>
+        <p>While solid application security, secure base images, and
+        secure handling of container images will help to
+        <strong><em>prevent</em></strong> a container from being
+        breached, runtime security will help
+        <strong><em>limit</em></strong> an attacker’s ability to launch
+        further attacks from a compromised container.</p>
+        <h3 id="what-attackers-target">What Attackers Target</h3>
+        <p>To be pragmatic with how we choose to secure our container
+        runtimes, we need to outline the types of attacks that are
+        launched from compromised containers:</p>
+        <ul>
+        <li><strong>Resource hijacking</strong>: <a
+        href="https://services.google.com/fh/files/misc/gcat_threathorizons_brief_nov2021.pdf">Google’s
+        threat horizon report</a> revealed 86% of their compromised
+        cloud instances were used to perform cryptocurrency mining ( -
+        there’s a lot of profit to be made from using compromised
+        infrastructure to do your cryptomining</li>
+        <li><strong>Lateral movement:</strong> where possible an
+        attacker will elevate their privilege and access within the
+        network, so breaking out from a container and onto the
+        underlying host machine is of high priority</li>
+        <li><strong>Data exfiltration</strong>: given the volume of data
+        services within a container may process, there’s a great
+        motivation for attackers to steal this data for financial
+        gain</li>
+        <li><strong>Denial of service</strong>: it’s fairly common for
+        attackers to use the foothold of a compromised container to
+        launch disruptive attacks on infrastructure, affecting the
+        availability of container services</li>
+        </ul>
+        <p>With this understanding of the core motivations of an
+        attacker with access to a running container, we can outline
+        practical steps to reduce the likelihood and impact of these
+        attacks</p>
+        <h3 id="access-control">Access Control</h3>
+        <p><strong>Don’t run privileged containers</strong>:</p>
+        <ul>
+        <li><p>This privileged flag allows containers to run with full
+        uninhibited access to its host machine</p></li>
+        <li><p>Risk mitigated:</p>
+        <ul>
+        <li>Preventing privileged containers being deployed hugely
+        reduces the likelihood of a successful container breakout - if a
+        container is compromised and is privileged it’s game over!</li>
+        </ul></li>
+        <li><p>How to implement:</p>
+        <ul>
+        <li>Audit files and commands used to run containers for usage of
+        privileged or the <code>--privileged</code> flag<br />
+        </li>
+        <li>Check Docker Compose and <code>docker run</code> commands
+        for privileged being used</li>
+        <li>Check Kubernetes manifest files for
+        <code>securityContext</code> setting privileged</li>
+        </ul></li>
+        <li><p>Next steps:</p>
+        <ul>
+        <li><p>To mature this control, implement blocking steps to
+        restrict running privileged containers:</p>
+        <ul>
+        <li>For Kubernetes, enforce this with admission controllers</li>
+        <li>For Docker, if using Docker Compose then add OPA check</li>
+        </ul></li>
+        </ul></li>
+        </ul>
+        <p><strong>Use default SecComp security profile</strong></p>
+        <ul>
+        <li><p>This is a Linux security module used to set limits on the
+        syscalls available to a container</p></li>
+        <li><p>Risk mitigated:</p>
+        <ul>
+        <li>Using SecComp profiles restricts the potential attack
+        vectors an attacker can exploit - they can’t mount the host
+        filesystem if they don’t have access to the <code>mount</code>
+        syscall!</li>
+        <li>Using AppArmor profiles we further restrict the actions that
+        an attacker can perform within a compromised container, reducing
+        likelihood of privilege escalation and exfiltration of data</li>
+        </ul></li>
+        <li><p>How to implement:</p>
+        <ul>
+        <li>SecComp will run in default mode (using
+        <code>DefaultProfile</code>) in Docker, but will not run as
+        default in Kubernetes</li>
+        <li>Deploying default SecComp profile to Kubernetes Pod</li>
+        </ul>
+        <div class="sourceCode" id="cb1"><pre
+        class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">apiVersion</span><span class="kw">:</span><span class="at"> v1</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">kind</span><span class="kw">:</span><span class="at"> Pod</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">metadata</span><span class="kw">:</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> default-pod</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">labels</span><span class="kw">:</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">app</span><span class="kw">:</span><span class="at"> default-pod</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">spec</span><span class="kw">:</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">securityContext</span><span class="kw">:</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">seccompProfile</span><span class="kw">:</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> RuntimeDefault  </span></span></code></pre></div></li>
+        <li><p>Next steps:</p>
+        <ul>
+        <li>Create tailored security profiles based on what your
+        containerised services <em>actually</em> need to function</li>
+        <li>I’m actually working on a tool for auto-profiling and
+        deploying tailored SecComp profiles for containers running in
+        Kubernetes Pods - <a
+        href="https://github.com/doomholderz/k8seccomp">k8seccomp</a>
+        <em>(if you every try doing this manually for a multi-node
+        cluster you’ll realise how annoying this can be!)</em></li>
+        </ul></li>
+        </ul>
+        <p><strong>Use AppArmor security profile</strong></p>
+        <ul>
+        <li><p>This is a Linux security module used to set mandatory
+        access control for container processes</p></li>
+        <li><p>The security profile lets us restrict a container’s
+        access to low-level resources: files, networks, capabilities,
+        processes</p></li>
+        <li><p>Risk mitigated:</p>
+        <ul>
+        <li>Use of an AppArmor profile will restrict the actions an
+        attacker can perform within a compromised container, limiting
+        their ability to laterally move or perform malicious actions
+        within the container</li>
+        </ul></li>
+        <li><p>How to implement:</p>
+        <ul>
+        <li><p>Need to make sure AppArmor is installed on container
+        hosts/nodes:
+        <code>sudo apt-get install apparmor apparmor-utils</code></p></li>
+        <li><p>Within Docker:</p>
+        <ul>
+        <li>Use this when running Docker containers:
+        <code>docker run --security-opt "apparmor=docker-default" ...</code></li>
+        <li>Can also be done from Docker Compose by setting
+        <code>security_opt: apparmor:docker-default</code></li>
+        </ul></li>
+        <li><p>Within Kubernetes:</p>
+        <ul>
+        <li>Add to Pod deployment
+        <code>.securityContext.appArmorProfile.type: RuntimeDefault</code></li>
+        </ul></li>
+        </ul></li>
+        <li><p>Next steps:</p>
+        <ul>
+        <li>The implementation steps ensure the default AppArmor profile
+        is deployed, to mature this we would need to tailor the profile
+        to the characteristics of your container’s needs</li>
+        <li>This requires in depth profiling of the container, and until
+        I can add this functionality into <a
+        href="https://github.com/doomholderz/k8seccomp">k8seccomp</a> I
+        recommend using a tool like <a
+        href="https://github.com/genuinetools/bane">bane</a> to help
+        make the process of building custom AppArmor profiles less
+        laborious</li>
+        </ul></li>
+        </ul>
+        <p><strong>Don’t add unnecessary capabilities</strong></p>
+        <ul>
+        <li><p>When running containers we can specify additional Linux
+        capabilities for the container to be granted</p></li>
+        <li><p>These capabilities range from the innocuous
+        (<code>CAP_SYS_NICE</code>) to the downright dangerous
+        (<code>CAP_SYS_ADMIN</code>)</p></li>
+        <li><p>Risk mitigated:</p>
+        <ul>
+        <li>By ensuring we vet any capabilities added to a container to
+        least-privilege possible, we reduce the possible commands an
+        attacker can run to interact with the host kernel from a
+        compromised container.</li>
+        <li>This helps to mitigate a lot of container breakout
+        attacks</li>
+        </ul></li>
+        <li><p>How to implement:</p>
+        <ul>
+        <li>Fortunately we can use our AppArmor profiles to help set the
+        tone for the capabilities a container does/doesn’t have access
+        to</li>
+        <li>We should also audit Kubernetes manifests, Docker run
+        commands, and Docker Composes to ensure <code>--cap-add</code>
+        has not been used to over-provision capabilities to containers
+        that do not require them</li>
+        </ul></li>
+        </ul>
+        <p><strong>Don’t run containers as root</strong></p>
+        <ul>
+        <li><p>This gives root-level access within the container,
+        increasing the attack surface upon a successful container
+        compromise</p></li>
+        <li><p>Root account is needed for many container breakout
+        methods, so ensuring root is not used will mitigate many of
+        these</p></li>
+        <li><p>Risk mitigated:</p>
+        <ul>
+        <li>By running the container as a non-root user, we’re
+        immediately reducing the permissions an attacker compromising a
+        container has. This limits their ability to perform privileged
+        actions within the container required for lateral movement</li>
+        </ul></li>
+        <li><p>How to implement:</p>
+        <ul>
+        <li>Within Docker we should specify non-root user by using the
+        <code>USER</code> directive. This can be set in both Dockerfiles
+        and Docker Compose files, and can be run from the command line
+        via <code>docker run --user X ...</code></li>
+        <li>Within Kubernetes we can set the user and group for a Pod to
+        run its containers as, via
+        <code>securityContext.runAsUser</code> and
+        <code>securityContext.runAsGroup</code></li>
+        </ul></li>
+        </ul>
+        <h3 id="sensitive-mounts">Sensitive Mounts</h3>
+        <p><strong>Don’t mount /var/run/docker.sock</strong></p>
+        <ul>
+        <li><p>This gives full Docker access to the container, allowing
+        it to interact with Docker resources</p></li>
+        <li><p>Commonly used by attackers to create privileged
+        containers that they can then use to get Host system
+        access</p></li>
+        <li><p>Risk mitigated:</p>
+        <ul>
+        <li>This prevents an attacker within a compromised container
+        from being able to interact with Docker on the host machine
+        (e.g. spinning up a new privileged container they can use to
+        breakout onto the host machine with)</li>
+        </ul></li>
+        <li><p>How to implement:</p>
+        <ul>
+        <li>At a basic level, audit your Docker commands, files, and
+        Kubernetes manifest files</li>
+        <li>Docker commands: look for usage of
+        <code>docker run -v /var/run/docker.sock:...</code></li>
+        <li>Docker Compose file: look for setting of
+        <code>volumes: /var/run/docker.sock:...</code></li>
+        <li>Kubernetes manifest files: look for <code>volumes</code> and
+        <code>volumeMounts</code> specified in Pod manifests that
+        reference the <code>/var/run/docker.sock</code> path</li>
+        </ul></li>
+        <li><p>Next steps:</p>
+        <ul>
+        <li>To mature this control, consider using Open Policy Agent for
+        Docker, or admission controllers for Kubernetes to restrict the
+        ability to deploy containers with Docker daemon mounts</li>
+        </ul></li>
+        </ul>
+        <p><strong>Don’t mount unnecessary host directories</strong></p>
+        <ul>
+        <li><p>Through freely mounting host directories to a container,
+        we’re effectively breaking down the isolation of the container.
+        This can lead to the host being modifiable from within the
+        container, which can be significant in the case of a compromised
+        container.</p></li>
+        <li><p>Risk mitigated:</p>
+        <ul>
+        <li>By restricting the directories mounted from the host to the
+        container (with special attention to those given with write
+        permissions from the container) we reduce the likelihood of a
+        container breakout significantly.</li>
+        <li>This also reduces data exposure from within the container,
+        which can be used by an attacker for data exfiltration</li>
+        </ul></li>
+        <li><p>How to implement:</p>
+        <ul>
+        <li>We need to be sure we are mounting only the directories that
+        our container <em>must</em> have access to, and ensuring this
+        access is read-only (there should be very few cases where a
+        container should ever need to write to its host)</li>
+        <li>Look for volumes mounted in <code>docker run -v</code> or
+        <code>volumes:</code> in Docker to audit for this</li>
+        <li>Look for <code>volumes.hostPath</code> and
+        <code>volumeMounts</code> in Kubernetes Pod manifest files to
+        audit unnecessary host directory mounts for containers running
+        in Kubernetes</li>
+        </ul></li>
+        <li><p>Next steps:</p>
+        <ul>
+        <li>To mature this, we can align with our AppArmor profiles to
+        create an allowlist of directories that can ever be accessed
+        from within a container.</li>
+        <li>We can also use Open Policy Agent and Kubernetes Admission
+        Controllers to dictate whether containers can be deployed based
+        on the host directories mounted to the container</li>
+        </ul></li>
+        </ul>
+        <h3 id="resource-constraints">Resource Constraints</h3>
+        <p>Set cgroups (how to do this easily)</p>
+        <ul>
+        <li><p>Admittedly this is a little more complex than some of the
+        other controls, but is hugely impacting for preventing DoS
+        attacks.</p></li>
+        <li><p><code>cgroups</code> are a Linux kernel feature for
+        limiting resources available to processes. In our case, they can
+        help set the limit for the resources a container has access
+        to.</p></li>
+        <li><p>Risk mitigated:</p>
+        <ul>
+        <li>By setting sensible resource limits for a container, we can
+        mitigate resource exhaustion attacks launched from within a
+        compromised container, limiting the impact of such an attack to
+        only affect the resource the container was ever provisioned
+        with</li>
+        <li>This prevents one compromised container from being able to
+        severely impact the availability of another container -
+        enforcing the ideals of container isolation</li>
+        </ul></li>
+        <li><p>How to implement:</p>
+        <ul>
+        <li>Within Docker we can set this through flags like
+        <code>--cpus</code> and <code>--memory</code> to set constraints
+        on these resources for the container</li>
+        <li>Within Kubernetes we set this per container in the Pod
+        manifest as <code>.resources.limits</code></li>
+        </ul></li>
+        <li><p>Next steps:</p>
+        <ul>
+        <li>As this control is challenging to accurately put in place
+        without inadvertently impacting a container’s ability to run
+        effectively, it’s recommended that maturing the control requires
+        monitoring resource usage to adjust cgroup settings
+        accordingly.</li>
+        </ul></li>
+        </ul>
+        <p><strong>Use Docker content trust for pulling
+        images</strong></p>
+        <ul>
+        <li><p>Docker Content Trust allows us to ensure the integrity of
+        images we pull from our container registry through usage of
+        cryptographic signatures.</p></li>
+        <li><p>Risk mitigated:</p>
+        <ul>
+        <li>In implementing Docker Content Trust, we ensure the
+        container image we run has not been tampered with either in
+        transit or within the registry</li>
+        <li>This gives us reassurance that an attacker cannot modify
+        anything about the container from the moment we store its image
+        to the moment it is being executed as a container</li>
+        </ul></li>
+        <li><p>How to implement:</p>
+        <ul>
+        <li><p>When running containers from Docker, we can globally set
+        <code>export DOCKER_CONTENT_TRUST=1</code> on our host, which
+        will ensure all images pulled are verified for integrity before
+        being run</p>
+        <ul>
+        <li>This is done in conjunction with signing our images before
+        storing them in our container registry, achieved through
+        <code>docker trust sign &lt;image&gt;</code> with our private
+        key</li>
+        </ul></li>
+        <li><p>When running containers in Kubernetes, we enforce Docker
+        Content Trust via setting the environment variable on a Pod as
+        <code>.env.name: DOCKER_CONTENT_TRUST</code> and
+        <code>.env.value: 1</code></p></li>
+        </ul></li>
+        </ul>
+    </div>
+</body>
+</html>
