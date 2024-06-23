@@ -3,33 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>doomholderz - Week Roundup #1: June 17th - June 23rd</title>
+    <title>doomholderz - Security Roundup #1 - doomholderz</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
     <div class="container">
         <h1 id="week-roundup-1-june-17th---june-23rd">Week Roundup #1:
         June 17th - June 23rd</h1>
-        <h3 id="tldr-week-highlights">tl;dr Week Highlights</h3>
-        <h3 id="monday-17th-june">Monday 17th June</h3>
+	<p style="text-align:center;"><b>Quick roundup of the ~security~ stuff I've been working on in the past week!</b></p>
+        <h4 id="best-of-the-weeks">Best [placeholder] of the Week</h4>
+        <p><strong>Album of the week:</strong></p>
         <ul>
-        <li><p><strong>Worked on a process for testing and deploying
-        custom seccomp profiles</strong></p>
+        <li><a
+        href="https://open.spotify.com/album/4TyyZazCkju7vwioaV1KyE?si=Q5YI363HSiuKix3hYP-MBA">Animal
+        Collective - Strawberry Jam</a> is a "can't describe, won't describe" kinda album</li>
+        </ul>
+        <p><strong>Article of the week:</strong></p>
         <ul>
-        <li><p>Future work could be to automate testing of custom
-        seccomp profile in a Kubernetes Pod via a CLI tool,
-        requiring:</p>
-        <ol type="1">
-        <li>Automatic discovery of a candidate Node in a cluster
-        (available Pod space)</li>
-        <li>Auto-labeling the candidate Node
-        (e.g. <code>seccomp-custom=true</code>)</li>
-        <li>Adding custom profile to the Node in
-        <code>/var/lib/kubelet/seccomp-profiles/&lt;custom_profile_name&gt;.json</code></li>
-        <li>Generating Pod manifest with <code>nodeSelector</code> set
-        to candidate Node’s label, and <code>localhostProfile</code>
-        being set to profile filename</li>
-        </ol></li>
+        <li><a
+        href="https://eta.st/2023/01/31/rail-tickets.html">Reversing UK
+        mobile rail tickets by eta</a> was an unecessarily deep
+        dive into the inner workings of the UK’s train ticket
+        systems</li>
+        </ul>
+        <p><strong>Video of the week:</strong></p>
+        <ul>
+        <li><a
+        href="https://www.youtube.com/watch?v=FQXxw6PUu_4&amp;t=7s&amp;ab_channel=TIFFOriginals">How
+        Not to Get Sued with NIRVANA THE BAND THE SHOW</a> will teach you about fair use, which is, useful(?)</li>
+	</ul><br>
+        <h4 id="week-roundup">Week Roundup</h4>
+        <p><strong>Projects</strong>:</p>
+        <ul>
+        <li><p><strong>Started work on <a
+        href="https://github.com/doomholderz/k8seccomp">k8seccomp</a> -
+        a CLI tool for building and managing Linux security module
+        profiles in Kubernetes</strong></p>
+        <ul>
+        <li><code>auto-seccomp-profile</code> will attach a tracer to
+        the running processes of a Kubernetes pod, log all system calls
+        the containers makes, and dynamically generates a custom SecComp
+        profile for the Pod</li>
+        <li><code>deploy-seccomp-profile</code> to make it easy to
+        deploy profiles to Pods. Issue is the Pod needs the profile on
+        any of the Nodes it can run on, so this automates the process to
+        deploy to one or many Nodes in the cluster</li>
+        <li><code>validate-apparmor-profile</code> is a bit misplaced
+        now (needs its own repo) but will validate an AppArmor profile
+        and shout if there’s anti-patterns in use (e.g. write access to
+        wildcarded resources)</li>
+	</ul></li><br>
+        <li><p><strong>Worked on my <a
+        href="https://doomholderz.com/blogs/intro_pragmatic_container_security_guide.html">Guide
+        to Pragmatic Container Security</a></strong></p>
+        <ul>
+        <li>This is my first foray into writing a security guide, wanted
+        to focus on something I’m actively working with at the
+        moment</li>
+        <li>Aiming for this to be a purely pragmatic and practical
+        approach, so ensuring the attacks we care about are outlined in
+        each domain of the guide, how the controls actively mitigate the
+        risk associated with these attacks, and further steps that can
+        be taken to mature these controls</li>
+        <li>Focusing on the Runtime Security section of the guide
+        (hopefully will have this ready to release next week!)</li>
+        <li>Limiting factor right now is having my own fully-fledged K8s
+        cluster to work on so I can screenshot how to implement some of
+        these recommendations (foreboding…)</li>
+	</ul></li><br>
+        <li><p><strong>Trials and tribulations of setting up my own
+        Kubernetes cluster</strong></p>
+        <ul>
+        <li>Wanted my own persistent cluster to help with some of the
+        projects I’m working on (e.g. k8seccomp tool, container security
+        guide)</li>
+        <li>Tried kind and minikube, but as both manage K8s pods as
+        nested container it did not work well when messing with the
+        kernel (and more importantly did not emulate production-grade
+        K8s clusters)</li>
+        <li>Working now on deploying a rough-and-ready cluster in
+        GCP</li>
+        </ul></li>
+	</ul><br>
+        <p><strong>Articles and Videos</strong></p>
+        <ul>
+        <li><p><strong><code>&lt;article&gt;</code> <a
+        href="https://grahamhelton.com/blog/k8slogs/">A Guide to
+        Kubernetes Logs that Isn’t a Vendor Pitch</a></strong></p>
+        <ul>
+        <li>This is a rundown of all of the security logs available for
+        a service running in a cloud-based Kubernetes cluster, by Graham
+        Helton (one of the best security article writers about right
+        now)</li>
+        <li>Utilises the <code>Kuburrito</code> model for breaking down
+        the layers of logs available to monitor a cloud-cluster deployed
+        app, with an emphasis on <code>AuditPolicy</code> logs being the
+        killer source for security monitoring</li>
+	</ul></li><br>
+        <li><p><strong><code>&lt;video&gt;</code> <a
+        href="https://www.youtube.com/watch?v=jFrGhodqC08">The cloud is
+        over-engineered and overpriced</a></strong></p>
+        <ul>
+        <li>While I don’t necessarily agree with everything said in the
+        video (horizontal scaling and database management just
+        <em>is</em> easier in the cloud) it’s a pretty good
+        pause-for-thought on the delta between self-hosting and
+        cloud-hosting</li>
+	</ul></li><br>
+        <li><p><strong><code>&lt;article&gt;</code> <a
+        href="https://www.sumologic.com/blog/threat-labs-kubernetes-home-lab/">Building
+        a Kubernetes purple teaming lab</a></strong></p>
+        <ul>
+        <li>This was an article about setting up a simple local minikube
+        cluster with basic telemetry feeding into Sumo Logic</li>
+        <li>I was hoping for a little more of an in-depth runthrough of
+        how to build a fully-fledged ‘purple team’ lab, but this is a
+        nice intro</li>
+        <li>Would like to write my own guide for achieving this in the
+        future, focusing on actual multi-node clusters and
+        emulating/detecting attacks exploiting real vulnerabilities in
+        containers and Kubernetes</li>
+	</ul></li><br>
+        <li><p><strong><code>&lt;article&gt;</code> <a
+        href="https://securitylabs.datadoghq.com/articles/attackers-deploying-new-tactics-in-campaign-targeting-exposed-docker-apis/">Attackers
+        deploying new tactics in campaign targeting exposed Docker
+        APIs</a></strong></p>
+        <ul>
+        <li>Persistence go brrr, really interesting overview of a new
+        cryptojacking campaign targeting publicly-exposed Docker engines
+        (tut tut)</li>
+        <li>When I have more time I’d love to go through and highlight
+        each area of the attack against logs that <em>could</em> be
+        available, the folks running this campaign don’t seem to mind
+        being fairly noisy so this seems like a great opportunity for
+        layered detection rules</li>
+	</ul></li><br>
+        <li><p><strong><code>&lt;article&gt;</code> <a
+        href="https://pulse.latio.tech/p/wtf-is-cdr-part-13">WTF is
+        CDR?</a></strong></p>
+        <ul>
+        <li>Very entertaining and insightful article by James Berthoty
+        on laying out exactly what a Cloud Detection &amp; Response tool
+        <em>actually</em> looks like, and how the industry has become
+        hyper-fixated on ‘total cloud coverage’ to the detriment of
+        actual cloud workload protection</li>
+        <li>In the article James argues that for the majority of
+        companies, CDR should be just the culmination of Kubernetes API
+        logs, container logs, and cloud logs</li>
+        <li>Seems like another case of vendors being unable (or
+        unwilling) to see the wood for the trees, bolstered by an
+        industry that is more obsessed with perceived ‘coverage’ than
+        actionable insights</li>
         </ul></li>
         </ul>
     </div>
