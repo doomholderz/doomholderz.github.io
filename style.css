@@ -57,8 +57,9 @@ li p {
 }
 
 a {
-    color: #d3d3d3;
+    color: #f0e999;
     text-decoration: none;
+    text-decoration:bold;
 }
 
 a:hover {
