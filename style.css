@@ -66,8 +66,20 @@ a:hover {
     color: #f0e68c;
 }
 
+img {
+	max-width:50%;
+	height:auto;
+}
+
+hr {
+	width:70%;
+	opacity:0.5;
+	margin-top:30px;
+	margin-bottom:30px;
+}
+
 .container {
-    width: 80%;
+    width: 60%;
     margin: 0 auto;
     padding: 20px;
     border: 0px solid #d3d3d3;
