@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>doomholderz - doomholderz - Security Roundup #2</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="container">
+	    <a href="https://doomholderz.com" style="margin-left:20px; font-size:20px;"><b>Home</b></a>
+	    <h1 id="week-roundup-2-june-24th---june-30th">Week Roundup #2:
+        June 24th - June 30th</h1>
+	    <p style="text-align:center;"><strong>Quick roundup of the ~security~ stuff I’ve
+        been working on in the past week!</strong></p>
+        <h4 id="best-placeholder-of-the-week">Best [placeholder] of the
+        Week</h4>
+        <p><strong>Album of the week:</strong></p>
+        <ul>
+		<li><a href="https://open.spotify.com/album/38hr6lK2Up3QabqUEUEhKx?si=7WTya2roRQ2myb9aba_-BQ">Chat Pile - God's Country</a> - saw these guys live this week
+        and it was as heavy as I expected, but a lot more talking about
+        Paddy Considine films</li>
+        </ul>
+        <p><strong>Article of the week:</strong></p>
+        <ul>
+        <li><a
+        href="https://tldrsec.com/p/kubernetes-security-threat-informed-defense">Keep
+        Hackers Out of Your Kubernetes Cluster with These 5 Simple
+        Tricks! - Christophe Tafani-Dereeper &amp; Frederic Baguelin</a>
+        was just the right amount of meme-to-heavy research ratio, I
+        speak more about this in the Articles section at the end</li>
+        </ul>
+        <p><strong>Video of the week:</strong></p>
+        <ul>
+        <li><a
+        href="https://www.youtube.com/watch?v=71g_aVfLBDk&amp;ab_channel=KaiserNeel">Do
+        You Really Need Anyone Else - COD Montage</a> should be locked
+        away in a time capsule, this is prime Youtube baby</li>
+	</ul><br>
+        <h4 id="week-roundup">Week Roundup</h4>
+        <p><strong>Projects</strong>:</p>
+        <ul>
+        <li><p><strong>Released <a
+        href="https://doomholderz.com/blogs/runtime_security_pragmatic_container_security_guide.html">part
+        1 of my Guide to Pragmatic Container Security</a> focusing on
+        practical steps to reduce runtime security
+	risk</strong></p></li><p></p>
+        <li><p><strong>Set up phase 1 of my purple-team home
+        lab</strong></p>
+        <ul>
+        <li>Span up a GKE cluster and installed Falco for runtime
+        monitoring</li>
+        <li>Was a good intro into the nuances of GCP (e.g. tag-based
+        firewalls, which have grown on me a lot)</li>
+        <li>Was cool to measure the difference between Falco’s native
+        detection rules vs. GuardDuty’s runtime monitoring tool’s rules.
+        The main takeaway here is that the extensibility of Falco with
+        custom rules places it hand-over-foot to actually mature your
+        runtime monitoring capability, for the little cost of a helm
+        install</li>
+        <li>Want to work on setting up an Elastic SIEM to start
+        ingesting some of my GKE/GCP logs to. It’d be cool to map these
+        logs to threat matrices like <a
+        href="https://www.microsoft.com/en-us/security/blog/2020/04/02/attack-matrix-kubernetes/">Microsoft’s</a>
+        to create a blue-team handbook for building comprehensive
+        security monitoring for Kubernetes clusters.</li>
+	</ul></li><p></p>
+        <li><p><strong>Played around with custom AppArmor
+        profiles</strong></p>
+        <ul>
+        <li>Started setting up AppArmor profiles for container processes
+        running in my purple-team cluster</li>
+        <li>Ended up being a lot longer winded than it needed to be (did
+        not set up the NAT gateway correctly and realised so far too
+        late)</li>
+        <li>The process for loading these into the Host kernels in the
+        cluster proved to be as tedious as with AWS, DaemonSet worked
+        well to <em>install</em> the profiles, but loading them into the
+        kernel is a different kettle of fish</li>
+        </ul></li>
+	</ul><br>
+        <p><strong>Articles and Videos</strong></p>
+        <ul>
+        <li><p><strong><code>&lt;article&gt;</code> <a
+        href="https://blog.christophetd.fr/stop-worrying-about-allowprivilegeescalation/">Stop
+        worrying about ‘allowPrivilegeEscalation’</a></strong></p>
+        <ul>
+        <li>Good overview of what the
+        <code>allowPrivilegeEscalation</code> option <em>can</em> and
+        <em>cannot</em> do to secure a container</li>
+        <li>Would be cool to have a map of known ‘common’ privilege
+        escalation techniques and the effectiveness of
+        <code>allowPrivilegeEscalation</code> for each of these</li>
+	</ul></li><p></p>
+        <li><p><strong><code>&lt;article&gt;</code> <a
+        href="https://www.microsoft.com/en-us/security/blog/2020/04/02/attack-matrix-kubernetes/">Microsoft’s
+        Threat Matrix for Kubernetes</a></strong></p>
+        <ul>
+        <li>Pretty nice overview of the major attacker techniques in
+        Kubernetes</li>
+        <li>Not exhaustive (and not trying to be!) but would be a great
+        place to start considering the logs needed for observing each of
+        these techniques</li>
+        <li>Crazy how it’s just the law that everything comes back to
+        RBAC</li>
+        <li>I know work is being done to develop a red-team spin-off of
+        this threat matrix with Graham Helton’s <a
+        href="https://kubenomicon.com/">Kubenomicon</a>, it would be
+        cool if a similar resource existed for blue-team to outline the
+        defensive controls and telemetry we should have in place for
+        each technique.</li>
+	</ul></li><p></p>
+        <li><p><strong><code>&lt;handbook&gt;</code> <a
+        href="https://gopivot.ing/">Pivot Atlas</a></strong></p>
+        <ul>
+        <li>This is a cyber threat intelligence handbook authored by
+        Amitai Cohen to provide digital pivots to make with threat
+        intelligence artifacts</li>
+        <li>I’ve always found threat intelligence work one of
+        <em>the</em> dark arts of cyber security, but this handbook
+        makes it much more straightforward to progress from single
+        artifacts like domain names to a full holistic view of a threat
+        actor and their digital assets</li>
+        <li>The handbook makes frequent reference to real-life attacks
+        and threat actors to show the value in pivoting from digital
+        artifacts, which really brings home the value of this kind of
+        threat intel work</li>
+	</ul></li><p></p>
+        <li><p><strong><code>&lt;article&gt;</code> <a
+        href="https://tldrsec.com/p/kubernetes-security-threat-informed-defense">Keep
+        Hackers Out of Your Kubernetes Cluster with These 5 Simple
+        Tricks!</a></strong></p>
+        <ul>
+        <li>Typical attacker path is to schedule new workloads via
+        privileged Pods or DaemonSets</li>
+        <li>Typically use their own images - not ones default in the
+        cluster (e.g. purpose-built cryptominer image)</li>
+        <li>No public reports of poisoned container images used in a
+        supply chain attack</li>
+        <li>Once an attacker gains code-execution capabilities on a
+        container, they frequently use <code>curl</code> or
+        <code>wget</code> to retrieve second-stage Bash scripts for
+        execution</li>
+        <li>Importance of admission controllers to enforce intentional
+        running of resources in cluster - no unvetted image
+        repositories, no privileged pods, no pods mounting the host
+        filesystem</li>
+        <li>Usage of read only root filesystem for stateless workloads
+        to prevent many common exploits relying on writing to disk</li>
+        </ul></li>
+        </ul>
+    </div>
+</body>
+</html>
