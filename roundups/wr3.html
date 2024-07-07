@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>doomholderz - Week Roundup #3</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="container">
+	    <a href="https://doomholderz.com" style="margin-left:20px; font-size:20px;"><b>Home</b></a>
+        <h1 id="week-roundup-3-july-1st---july-7th">Week Roundup #3:
+        July 1st - July 7th</h1>
+        <p style="text-align:center"><strong>Quick roundup of the ~security~ stuff I’ve
+        been working on in the past week!</strong></p>
+        <h4 id="best-placeholder-of-the-week">Best [placeholder] of the
+        Week</h4>
+        <p><strong>Album of the week:</strong></p>
+        <ul>
+        <li><a href="https://open.spotify.com/album/4PWBTB6NYSKQwfo79I3prg?si=1b1baa4c0cea4ca5">Travis Scott - Rodeo</a> is just banger after
+        banger, when every song can be an album’s lead single how can
+        you lose</li>
+        </ul>
+        <p><strong>Article of the week:</strong></p>
+        <ul>
+        <li><a
+        href="https://github.com/gracenolan/Notes/blob/master/interview-study-notes-for-security-engineering.md">Security
+        Engineering at Google: My Interview Study Notes - nolang</a> is
+        a great write up of some of the core technical interview
+        questions that’ll be asked across most security engineer
+        interviews, definitely useful if you’re trying to find areas of
+        weakness to flesh out during interview season</li>
+        </ul>
+        <p><strong>Image of the week:</strong></p>
+        <ul>
+		<li>Pizza mouth of Bristol<li><img src="pizza-mouth.png" style="width:20%;" /></li></li>
+        </ul>
+        <h4 id="week-roundup">Week Roundup</h4>
+        <p>This was a hectic week both professionally and personally, so
+        unfortunately the throughput for project work was limited this
+        week. I’m hoping to pick this up a little more next week, with a
+        focus on GCP security work to help me understand the nuances of
+        GCP better.</p>
+        <p><strong>Projects</strong>:</p>
+        <ul>
+        <li><p><strong>Set up phase 2 of my purple-team home
+        lab</strong></p>
+        <ul>
+        <li>Installed ELK stack with Filebeat to manage my Falco logs
+        from GKE Nodes</li>
+        <li>Ingesting just Falco logs currently, began looking at the
+        available GKE logs collected in GCP Log Explorer - not very
+        obvious how to manage these and get them into self-hosted
+        Elastic SIEM!</li>
+        <li>Next phase will likely be to filter security-relevant API
+        server logs from Log Explorer and forward these to Elastic via
+        some Pub/Sub topics</li>
+        <li>Issue faced that I still haven’t resolved is with setting up
+        TLS certificates within ELK - ended up pivoting from fixing this
+        into looking at self-signed TLS certificate attacks… rabbit
+        holes rabbit holes</li>
+        </ul></li>
+        </ul>
+        <p><strong>Articles and Videos</strong></p>
+        <ul>
+        <li><p><strong><code>&lt;paper&gt;</code> <a
+        href="https://www.ijitee.org/wp-content/uploads/papers/v8i7s2/G10240587S219.pdf">Security
+        Issues with Self-Signed SSL Certificates</a></strong></p>
+        <ul>
+        <li>Good overview of the main 2 methods of performing
+        adversary-in-the-middle attacks in networks where self-signed
+        TLS certificates are in use</li>
+        <li>Would be interesting to find similar attack methodologies
+        for abuse in Kubernetes clusters</li>
+        </ul></li>
+	<li><p><b><code>&lt;video&gt;</code> <a
+        href="https://www.youtube.com/watch?v=wdPkY7gykf4&amp;ab_channel=Hacktivity-ITSecurityFestival">Attacking
+	RDP with Seth - Adrian Vollmer</a></b></p>
+        <ul>
+        <li>Interesting talk on the SETH open-source tool for RDP
+        eavesdropping</li>
+        <li>Don’t really work much with Windows so was nice to
+        understand some of the authentication methods and their
+        vulnerabilities (e.g. pass-the-hash through NTLM and
+        Kerberos)</li>
+        <li>Whole reason I watched this was to better understand attacks
+        against self-signed TLS certificates</li>
+        </ul></li>
+        </ul>
+    </div>
+</body>
+</html>
