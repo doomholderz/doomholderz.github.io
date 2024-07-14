@@ -1,0 +1,107 @@
+<h1 id="week-roundup-4-july-8th---july-14th">Week Roundup #4: July 8th -
+July 14th</h1>
+<p><strong>Quick roundup of the ~security~ stuff I’ve been
+working on in the past week!</strong></p>
+<p>Getting rid of the CSS this week, hate setting it up and this looks so much cooler</p>
+<h4 id="best-placeholder-of-the-week">Best [placeholder] of the
+Week</h4>
+<p><strong>Album of the week:</strong></p>
+<ul>
+<li><a
+href="https://open.spotify.com/album/4BnNSzOWadogStvyYshJIo?si=xmey2zxTSXyQQBPT-MGG4g">Portishead
+- Third</a> exceeded any expectations I had of what post-Dummy
+Portishead would be like. Way more interesting than I expected, and no
+song has pulled the carpet from underneath me more than Silence</li>
+</ul>
+<p><strong>Article of the week:</strong></p>
+<ul>
+<li><a
+href="https://blog.marcolancini.it/2022/blog-cloud-security-infrastructure-review/">Marco
+Lancini’s ‘What to look for when reviewing a company’s
+infrastructure’</a> is one of the most incredibly methodical and
+pragmatic design review approaches I’ve ever read. As a security
+engineer that will soon be having to review a lot of brand new
+infrastructure (...) this guide will likely be my north star
+for how to approach this systematically.</li>
+</ul>
+<p><strong>Purchase of the week:</strong></p>
+<ul>
+<li>I respect the fuck out of consumer tech that solves one problem
+really well, and in my conscious efforts this year to untether myself
+from my phone and computer I’ve purchased a second-hand iPod Nano. This
+thing is the shit, haven’t listened to so much new music in months
+</li>
+<img src="ipod.jpg" style="max-width:200px;"/>
+</ul>
+<h2>Week Roundup</h2>
+<p>This was another unbelievably hectic but exciting week, and with mounting pressure in my current role I've not had as much free time to work on personal projects. Nonetheless I've got to read some interesting articles, and work on one cool project that should set me up well for future security adventures!</p>
+<p><strong>Projects</strong>:</p>
+<ul>
+<li><p><strong>Writing up a personal infrastructure design review
+process for GCP environments</strong></p>
+<ul>
+<li>Off the back of Marco Lancini’s <a
+href="https://blog.marcolancini.it/2022/blog-cloud-security-infrastructure-review/">infrastructure
+review guide</a> I’ve been working to build out my own personal approach
+that granularly reviews GCP infrastructure environments.</li>
+<li>For the most part this has been an exercise in identifying all of
+the GCP services available to a. secure cloud services, b. secure
+workloads, and c. assess the security of the cloud holistically</li>
+<li>There’s a lot of other blogs available in this area that it would be
+good to spend time with to enrich this approach</li>
+</ul></li>
+</ul>
+<p><strong>Articles and Videos</strong></p>
+<ul>
+<li><p><strong><code>&lt;article&gt;</code> <a
+href="https://blog.marcolancini.it/2022/blog-cloud-security-infrastructure-review/">What
+to look for when reviewing a company’s infrastructure</a></strong></p>
+<ul>
+<li>Nothing more to add than what’s already said, just a great
+guide</li>
+</ul></li>
+<li><p><strong><code>&lt;article&gt;</code> <a
+href="https://blog.doyensec.com/2024/07/02/cspt2csrf.html?utm_source=tldrsec.com&amp;utm_medium=referral&amp;utm_campaign=tl-dr-sec-238-security-engineering-google-interview-notes-bsidessf-talks-github-ci-cd-egress-filtering">Exploiting
+Client-Side Path Traversal to Perform Cross-Site Request
+Forgery</a></strong></p>
+<ul>
+<li>This is such a niche attack I love it, plus CSPT2CSRF looks
+badass</li>
+<li>The <a
+href="https://www.doyensec.com/resources/Doyensec_CSPT2CSRF_OWASP_Appsec_Lisbon.pdf">slide
+deck</a> for the presentation by Maxence Schmitt at OWASP AppSec in
+Lisbon helps to flesh out exactly how this attack works</li>
+<li>Really want to go hunting for some CSPT’s now</li>
+</ul></li>
+<li><p><strong><code>&lt;article&gt;</code> <a
+href="https://slack.engineering/catching-compromised-cookies/?utm_source=tldrsec.com&amp;utm_medium=referral&amp;utm_campaign=tl-dr-sec-238-security-engineering-google-interview-notes-bsidessf-talks-github-ci-cd-egress-filtering">Catching
+Compromised Cookies at Slack</a></strong></p>
+<ul>
+<li>Idea of monitoring for last access timestamp in a presented cookie
+is really cool, goes beyond the technical and actually considers how an
+attacker would practically use a stolen cookie</li>
+<li>Given the propensity of false-positives, I’m interested to see how
+this could rollout with invalidating sessions marked as potentially
+forked</li>
+</ul></li>
+<li><p><strong><code>&lt;tool&gt;</code> <a
+href="https://github.com/domain-protect/domain-protect-gcp?utm_source=tldrsec.com&amp;utm_medium=referral&amp;utm_campaign=tl-dr-sec-238-security-engineering-google-interview-notes-bsidessf-talks-github-ci-cd-egress-filtering">domain-protect-gcp</a></strong></p>
+<ul>
+<li>This is a cool open-source tool for detecting vulnerable domain
+records in GCP</li>
+<li>Need to learn more about subdomain delegations and how takeovers can
+occur for these</li>
+</ul></li>
+<li><p><strong><code>&lt;article&gt;</code> <a
+href="https://threats.wiz.io/defenses?utm_source=tldrsec.com&amp;utm_medium=referral&amp;utm_campaign=tl-dr-sec-238-security-engineering-google-interview-notes-bsidessf-talks-github-ci-cd-egress-filtering">Cloud
+Threat Landscape by Wiz</a></strong></p>
+<ul>
+<li>Nice little database of cloud security measures to prevent attacks
+in the cloud</li>
+<li>Links off really well to the <a
+href="https://d3fend.mitre.org/">MITRE D3FEND</a> matrix</li>
+<li>Would be good to spend some time with this and the cloud security
+review process I’m building to start some heatmapping around the D3FEND
+matrix</li>
+</ul></li>
+</ul>
