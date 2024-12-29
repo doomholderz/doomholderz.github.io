@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>doomholderz Security Blog</title>
+    <link rel="stylesheet" href="../style.css">
+    <script src="../script.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id='header'>
+        &nbsp;
+      </div>
+    <div id="main">
+        <h1><a href="../index.html">doomholderz Security Blog</a></h1>
+
+        <h3>A Methodology for Prioritising Security Projects</h3>
+        Rank the following security projects in terms of importance:
+        <ul>
+            <li>Preventing vulnerable container images being deployed to Kubernetes cluster
+            <li>Writing new SAST rules for SQLi discovery in your Ruby services
+            <li>Enforcing 4-eye reviews for PRs in all your Github repositories
+            <li>Introducing a service mesh to encrypt internal traffic between microservices
+        </ul>
+        
+        <p>Instinctively as security professionals we'll try to consider the above in terms of the risk they reduce, but without context both to your organisation and the security industry at large, <u>this is not straightforward</u>.</p>
+        
+        <p>The tendency is then to fall back to allowing <a href="https://www.callboxinc.com/growth-hacking/cyber-security-vendors-need-move-past-fud/" style="color:purple">FUD</a> and our teams' biases to cloud our judgements - <span style="color:rgb(72, 29, 29);"><i>'Wiz shows our container vulnerabilities as the cruelest shade of red: this must be our priority!'</i></span></p>
+        
+        <p>Our objective is simple: <b>We want a clear understanding of how a given security project <i>tangibly</i> resolves an <i>actively exploitable</i> issue against <i>our</i> organisation</b> - we can refer to these as 'true-positive projects'.</p>
+        
+        <p>Below is a list of 10 questions to vault this gulf of FUD and qualify the value of a given project for an organisation.</p>
+        <h4>Pre-Project Questionnaire</h4>
+        <ol>
+            <li>What is the underlying risk(s) this project is trying to mitigate?</li>
+            <li>Does this piece of work resolve (fully or partially) an issue discovered previously within your live services (e.g. disclosed in a bug bounty program, or identified during an external pentest)?</li>
+            <li>What are the <i>likely</i> outcomes of not doing this work?</li>
+            <li>What is the <i>worst-case</i> outcome of not doing this work?</li>
+            <li>How exploitable is the underlying issue(s) this project aims to mitigate?</li>
+            <li>Does this piece of work resolve a risk identified in an industry-standard risk framework (e.g. ISO27001, OWASP)?</li>
+            <li>Does this piece of work resolve (fully or partially) an issue recently exploited in the wild (e.g. within the <a style="color:purple;" href="https://github.com/cncf/tag-security/tree/main/community/catalog/compromises">CNCF Supply Chain Compromises Catalog</a>)?</li>
+            <li>What is the minimum viable work to resolve the identified issue(s)?</li>
+            <li>What are the costs (technically and non-technically) for implementing this work, and maintaining this long-term?</li>
+            <li>Where will this work induce friction (both technically and non-technically)?</li>
+        </ol>
+        Here's a runthrough of prospective answers for <b>'Enforcing 4-eye reviews across our Github repos'</b>.
+        <ol>
+            <li>Lack of change control to prevent deploying vulnerable or malicious code to our production services</li>
+            <li>No - this risk has not previously been identified as being exploited.</li>
+            <li>Non-reviewed code will be deployed, increasing the chances of faulty production services</li>
+            <li>An attacker will compromise a valid Github account to deploy malicious code to our production services, affecting the confidentiality, integrity, and availability of services and their respective data</li>
+            <li>Relies on either a. a motivated internal attacker, or b. compromising a valid Github account internal to our organisation. As we use SSO this will mostly lie on compromising a users' personal access token, which we lack auditing on currently.</li>
+            <li>Yes, this is #1 in <a href="https://owasp.org/www-project-top-10-ci-cd-security-risks/CICD-SEC-01-Insufficient-Flow-Control-Mechanisms" style="color:purple">OWASP Top 10 CI/CD Security Risks</a></li>
+            <li>Yes, this is a common attack vector (e.g. <a href="https://news-web.php.net/php.internals/113981" style="color:purple";>PHP incident in 2021</a>, <a href="https://brew.sh/2021/04/21/security-incident-disclosure/" style="color:purple;">Homebrew incident in 2021</a>)</li>
+            <li>Work to change Backstage template for Github repos to enforce 4-eye review config. Then use Github API to find all non-conforming repos. We then need to ensure all repos are declared with Terraform, make the config changes, and merge PRs to align these repos with our standard.</li>
+            <li>Cost of enforcing this for newly created repositories is just for making technical change to our Backstage template repository. Cost of enforcing this for existing repositories is in making changes in Terraform, confirming with affected teams, and merging related PRs. No additional costs long-term.</li>
+            <li>Friction for developers that are used to pushing changes without approval, unfortunately there is little to be done here as this is a systemic change for which engineering culture will need to adapt.</li>
+        </ol>
+        <p>In answering these questions during project planning you'll quickly identify true-positive projects that are almost guaranteed to solve a highly exploitable vulnerability within your organisation, and flush out projects that masquerade as 'high-value'.</p>
+
+    </div>
+</body>
+</html>
+
