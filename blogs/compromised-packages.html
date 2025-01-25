@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>doomholderz Security Blog</title>
+    <link rel="stylesheet" href="../style.css">
+    <script src="../script.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id='header'>
+        &nbsp;
+      </div>
+    <div id="main">
+        <h1><a href="../index.html">doomholderz Security Blog</a></h1>
+
+        <h3>Compromised Packages: a Software Supply-Chain Attack</h3>
+        <p>Broadly speaking, there are 3 types of packages security folk should be concerned with:
+            <ul>
+<li>Malicious packages: packages born and bred to cause damage</li>
+<li>Compromised packages: legitimate packages that have been compromised to include malicious code</li>
+<li>Vulnerable packages: legitimate packages that have inadvertently included code that can be exploited by an attacker</li>
+            </ul>
+<p>Today we're focussed on the second: <b>compromised packages</b>.</p>
+<p>This hinges on an attacker's ability to publish a version of a legitimate package containing malicious code, typically achieved through one of the following:</p>
+<ul>
+<li>Compromising a developer's SCM account</li>
+    <li>Compromising package manager credentials</li>
+    <li>Raising malicious PRs to public packages</li>
+</ul>
+
+<h4>Technique #1: Compromising Developer's SCM Account</h4>
+<p>With access to a maintainer-level account in the source repository of a package, an attacker can introduce new, and often unreviewed code into the package.</p> 
+<p>Often this malicious code will be heavily obfuscated to hide the attacker's intent, or it will take the form of referencing new packages owned and controlled by the attacker.</p>
+<img src="../images/code-obfuscation.png" style="height:300px;"/>
+<p>Without intervention, new versions of this package will include this code and hence services using the compromised package will themselves become compromised.</p>
+
+<h4>Technique #2: Compromising Package Manager Credentials</h4>
+<p>The most common attack vector for this kind of software supply-chain attack is the theft of valid package manager account credentials.</p>
+<p>With these credentials an attacker can publish new versions of any packages the credentials have maintainer-level access over, and need not worry about code reviews and going undetected - anyone using <code>package:latest</code> will immediately be affected by malicious code they insert into latest versions.</p>
+<p>This has been a constant source of software supply-chain attacks for years now, and <a href="https://github.com/web-infra-dev/rspack/issues/8767" style="color:purple">as recently as last month</a> we see packages compromised due to this vector.</p>
+<p>Predominantly this will be due to package maintainers not enforcing MFA on their package manager accounts, but this is still an avenue for attack with generated access tokens which are often stored and published (e.g. in <code>.npmrc</code> files for Node projects)</p>
+
+<h4>Technique #3: Raising Malicious PRs to Public Packages</h4>
+<p>This is kind of the most obvious way to compromise a package, because it's exactly the same way that you'd contribute any code to the package - forking and PR'ing!</p>
+<p>However in almost every case public packages will have some form of PR review process, wherein a maintainer for the project will validate the contributed code, and approve where appropriate.</p> 
+<p>As such, this vector relies on an insufficient review process, wherein subtle vulnerabilities can be introduced that the attacker can later rely on when later versions of the package are distributed.</p>
+<p>Malicious PRs can take another form though - abusing vulnerabilities in the project's build process to steal credentials that can be used for full package compromises (e.g. theft of CI's npm tokens to publish packages).</p>
+<p>An example of how this type of attack can be achieved can be found in <a href="https://nathandavison.com/blog/github-actions-and-the-threat-of-malicious-pull-requests" style="color:purple">Nathan Davison's blog on malicious PRs</a>, relying on the unsafe usage of <code>pull_request_target</code> in Github Actions.</p>
+
+<h4>What Can be Done?</h4>
+<p>At a high level, it's the same advice as always: use MFA on all accounts within your software supply-chain, and manage secrets and credentials effectively!</p>
+
+<p>At a lower level, while there have been some great strides by package managers to mitigate the risk of compromised packages being used in software supply-chain attacks (e.g. <a href="https://bundler.io/blog/2024/12/19/bundler-v2-6.html" style="color:purple">Ruby's latest Bundler version</a> providing lockfile checksums that <a href="https://github.com/rubygems/rubygems.org/security/advisories/GHSA-2jmx-8mh8-pm8w" style="color:purple">prevent swapping a dependency version for a malicious one</a>), there's still a long way to go.</p>
+
+<p>In an <i>ideal world</i>, we would be enforcing package signing for all package versions published to package managers, such that consuming services can validate the signature to prove the version was built appropriately (e.g. via the project's build pipeline, as opposed to published from an attacker's computer). This functionality does exist for some package managers (e.g. <a href="https://guides.rubygems.org/security/#:~:text=RubyGems%20has%20had,you%20install%20it" style="color:purple">in RubyGems</a>), but due to this being an optional security feature it's not a widely adopted mechanism by authors, and thus cannot be reliably used to help mitigate threat of compromised packages.
+    <br><br><br>
+    </div>
+</body>
+</html>
+
