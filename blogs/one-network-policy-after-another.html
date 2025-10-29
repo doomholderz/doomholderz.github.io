@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>doomholderz Security Blog</title>
+    <link rel="stylesheet" href="../style.css">
+    <script src="../script.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id='header'>
+        &nbsp;
+      </div>
+    <div id="main">
+        <div class="title"><h4><a href="../index.html">doomholderz Security Blog</a></h4></div>
+
+        <h1 style="text-align:center;">one network policy after another</h1>
+        <p>Multi-tenancy in Kubernetes involves multiple tenants operating within a single cluster.</p>
+        <p>A tenant may be a specific customer, an internal software service, or an engineering team, for which we will deploy workloads and resources that we want to be <i>isolated to that tenant</i>.</p>
+        <p>There is no native <i>Tenant</i> resource in Kubernetes to help us manage multi-tenancy - the onus is on us as cluster operators to construct our own logical tenant isolation boundary.</p>
+
+        <hr>
+        <h2>defining the tenant boundary</h2>
+        <h3>breaking down the boundary</h3>
+        <p>Firstly we'll break down the aims of a tenant boundary <a href="https://www.sysdig.com/blog/multi-tenant-isolation-boundaries-kubernetes">into 3 distinct goals</a>:</p>
+        <ul>
+            <li><b>isolate control plane access</b>: ensure workloads of one tenant cannot interact with resources of another tenant via the API server (unless <i>explicitly</i> allowed).</li>
+            <li><b>isolate host access</b>: ensure workloads of one tenant cannot interact with and affect kernel resources of another tenant (given hosts may run multiple tenants' resources).</li>
+            <li><b><i>isolate network access</i></b>: ensure workloads of one tenant have access only to the communication paths necessary for that tenant. This is the more nuanced of the goals, and requires a logical, abstract boundary created by a series of network policies, that control all inbound and outbound network traffic within our tenant.</li>
+        </ul>
+        <p><i>This blog focusses on how we build scalable <b>tenant network isolation</b> in a multi-tenant cluster.</i></p>
+
+        <h3>traffic patterns within the boundary</h3>
+        <p>To build secure tenant network isolation, we first need to understand the type of network traffic that passes through a tenant:</p>
+        <ul>
+            <li><b>external-to-pod <i>(ingress)</i></b></li><ul>
+                <li>Traffic originating outside of the cluster, destined for a workload within a tenant boundary.</li>
+                <li>This traffic will typically be routed to tenant workloads via an ingress controller.</li>
+            </ul>
+            <li><b>pod-to-pod <i>(east-west)</i></b></li><ul>
+                <li>Traffic passing between Pods (either within the same tenant, or cross-tenant).</li>
+                <li>As the default network topology of a cluster is flat, it's critical we manage pod-to-pod communication for a tenant declaratively.</li>
+            </ul>
+            <li><b>pod-to-node <i>(vertical)</i></b></li><ul>
+                <li>Traffic passing from a Pod to its underlying host.</li>
+                <li>This is a high-risk, privileged path that bypasses the tenant boundary - the Node is a shared resource hosting <i>multiple</i> tenants.</li>
+                <li>However there are specific system-level workloads such as Prometheus that need this network path (e.g. accessing the host's kubelet API for metric scraping)</li>
+            </ul>
+            <li><b>pod-to-internet <i>(pod egress)</i></b></li><ul>
+                <li>Traffic passing from a Pod to an internet service (e.g. Stripe, package repositories, cloud provider APIs).</li>
+                <li>Without declaring policy here, a Pod will have full access to any internet domain.</li>
+            </ul>
+            <li><b>node-to-internet <i>(node egress)</i></b></li><ul>
+                <li>Traffic originating from the host namespace of a Node, to an internet service</li>
+                <li>Nodes may need to pull resources that should be available for all Pods running on it, e.g. pulling from registries.</li>
+                <li>This is important to isolate in the event of a container breakout - by default a host's traffic will circumvent standard network policies.</li>
+            </ul>
+        </ul>
+<hr>
+        <h2>a layered policy approach</h2>
+        <h3>types of policy</h3>
+            <p>To provide tenant isolation across these traffic patterns, we will layer a series of network policies to create a strict default baseline from which we will explicitly allow necessary traffic:</p>
+            <ul>
+                <li><b>baseline policy (L3/4)</b>: a default-deny baseline across all tenants, blocking all traffic unless explicitly allowed. All subsequent policies build upon this foundation.</li>
+                <li><b>ingress policy (L3/4)</b>: tenant pods explicitly allow traffic from the ingress controller Pods. This operates at L3/4 to select Pods by labels, and allowing traffic through to specific workload ports.</li>
+                <li><b>east-west policy (L3/4 -> L7)</b>: basic communication paths between Pods must be explicitly allowed. Where possible, these L3/4 paths are hardened by restricting API paths or methods.</li>
+                <li><b>vertical policy (L7)</b>: pod-to-node traffic must be explicitly allowed using L7-aware policies (e.g. prometheus Pods having access to <code>kubelet</code> on port <code>:10250</code> to <code>GET /metrics</code>). Failure to control access to host APIs have been <a href="https://www.cyberark.com/resources/threat-research-blog/using-kubelet-client-to-attack-the-kubernetes-cluster">explored well in this blog</a>.</li>
+                <li><b>pod egress policy (L3/4 -> L7)</b>: fine-grained and explicit DNS-based allowlists, with the inclusion of L7 rules where possible</li>
+                <li><b>node egress policy (L3/4)</b>: as Node traffic bypasses all Kubernetes policies, we must implement policy attached to the Node itself to ensure only allowlisted egress traffic</li>
+            </ul>
+
+        <h3>the policies in practice</h3>
+          <p><b><i>These policies assume the presence of Cilium as the cluster CNI of choice. Mileage with other CNIs may vary.</i></b></p>
+          <p><code>default-deny.yaml</code> (baseline policy)</p>
+          <p>For our foundation policy, we want a one-time deploy of a cluster-wide 'default-deny' policy. This blocks all traffic (aside from egress to kube-dns) and enforces that all subsequent traffic flows must be explicitly declared.</p>
+          <pre>
+<code>apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: "default-deny"
+spec:
+  description: "block all the traffic (except egress to CoreDNS) by default"
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        io.kubernetes.pod.namespace: kube-system
+        k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: '53'
+        protocol: UDP
+      rules:
+        dns:
+        - matchPattern: '*'
+  endpointSelector:
+    matchExpressions:
+    - key: io.kubernetes.pod.namespace
+      operator: NotIn
+      values:
+      - kube-system</code></pre>
+<hr>
+        <p><code>ingress-to-server.yaml</code> (ingress policy)</p>
+        <p>Next we want to allow traffic from our ingress controller Pods to workload services.
+        We must define both an ingress and egress policy that allows trafic from specific Pods in our ingress namespace to specific Pods in our destination service's namespace</p>
+        <pre>
+<code>apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-nginx-ingress
+  namespace: server-ns
+spec:
+  endpointSelector:
+    matchLabels:
+      app: server
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app.kubernetes.io/name: ingress-nginx
+        io.kubernetes.pod.namespace: ingress-nginx
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: nginx-egress-to-server
+  namespace: ingress-nginx
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: ingress-nginx
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        app: server
+        io.kubernetes.pod.namespace: server-ns
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP</code></pre>
+<hr>
+        <p><code>pod-to-pod.yaml</code> (east-west policy)</p>
+        <p>Any pod-to-pod communication a tenant requires will be facilitated by an ingress/egress policy pair.
+        These policies may begin as L3/4, and can be matured with L7 filters (e.g. allowing only access to specific endpoints of the server).</p>
+        <pre>
+<code>apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-egress-to-web-server
+  namespace: client-ns
+spec:
+  endpointSelector:
+    matchLabels:
+      app: network-client
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": server-ns
+        "k8s:app": server
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-ingress-from-client
+  namespace: server-ns
+spec:
+  endpointSelector:
+    matchLabels:
+      app: server
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": client-ns
+        "k8s:app": network-client
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP</code></pre>
+<hr>
+        <p><code>pod-egress.yaml</code> (pod egress policy)</p>
+        <p>Pods needing to communicate with internet services require pod egress policies that specify the FQDN of the host.</p>
+        <p>If we want to restrict pod-egress to specific endpoints (or any other L7 filter) we require setting up TLS termination/re-origination within the cluster.
+        A guide for TLS inspection within Cilium <a href="https://docs.cilium.io/en/stable/security/tls-visibility/">exists here</a>, and relies on Envoy proxy terminating TLS traffic using internally-generated certificates for FQDNs we wish to manage L7 policies for, and re-originating after policy actions.</p>
+        <pre>
+<code>apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-pod-egress
+  namespace: client-ns
+spec:
+  endpointSelector:
+    matchLabels:
+      app: network-client
+  egress:
+  - toFQDNs:
+    - matchName: "<FQDN-TO-INTERCEPT>"
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+      terminatingTLS:
+        secret:
+          namespace: "kube-system"
+          name: "<FQDN-TO-INTERCEPT>-tls-data"
+      originatingTLS:
+        secret:
+          namespace: "kube-system"
+          name: "tls-orig-data"
+      rules:
+        http:
+        - path: "/v1/data(/.*)?$"
+          method: "GET"</code></pre>
+<hr>
+        <p><code>pod-to-node.yaml</code> (vertical policy)</p>
+        <p>Pods needing network access to Host services require a cluster-wide policy targetting the respective host endpoints.
+        This allows us to configure an ingress rule on the Host available to specific endpoints and on specific ports.</p>
+        <p><b>Quick tip</b>: node-level policies <i>can</i> (and often will) brick your cluster if you're not careful. You can configure your host's endpoint via <code>cilium-dbg endpoint config $HOST_EP_ID PolicyAuditMode=Enabled</code> to turn on audit-only mode for these policies, and view the intended actions of the policy via <code>cilium-dbg monitor -t policy-verdict --related-to $HOST_EP_ID</code>.</p>
+        <p>You can get the value of <code>$HOST_EP_ID</code> via <code>cilium-dbg endpoint list</code> and search for the Cilium endpoint ID of process ID 1.</p>
+        <pre>
+<code>apiVersion: "cilium.io/v2"
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: "kubelet-host-policy"
+spec:
+  description: ""
+  nodeSelector:
+    matchLabels:
+      node-access: kubelet
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: network-client-priv2
+    toPorts:
+    - ports:
+      - port: "10250"
+        protocol: TCP
+  - fromEntities:
+    - kube-apiserver
+    toPorts:
+    - ports:
+      - port: "10250"
+        protocol: TCP</code></pre>
+<hr>
+        <p><code>node-egress.yaml</code> (node egress policy)</p>
+        <p>Finally, in cases where a Node requires access to specific internet services, we provide access via our node egress policy.
+        Similar to vertical policies, this relies on us selecting Nodes via labels and configuring egress policies for each traffic flow.
+        There are several required egress rules for the Node to function effectively (e.g. access to API server and cilium agents on other Nodes).</p>
+        <pre>
+<code>apiVersion: "cilium.io/v2"
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: "worker-node-egress"
+spec:
+  description: "allow only essential observed egress traffic from worker nodes labeled node-access=kubelet."
+  nodeSelector:
+    matchLabels:
+      node-access: kubelet
+  egress:
+
+  # rule 1: allow communication to the cluster API server
+  - toEntities:
+    - kube-apiserver
+    toPorts:
+    - ports:
+      - port: "6443"
+        protocol: TCP
+      - port: "10250"
+        protocol: TCP
+
+  # rule 2: allow DNS lookups to coreDNS pods
+  - toEndpoints:
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": kube-system
+        "k8s:k8s-app": kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: ANY
+
+  # rule 3: allow health checks to coreDNS pods
+  - toEndpoints:
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": kube-system
+        "k8s:k8s-app": kube-dns
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+      - port: "8181"
+        protocol: TCP
+
+  # rule 4: allow cilium agent node-to-node communication for health checks
+  - toEntities:
+    - remote-node
+    - cluster
+    toPorts:
+    - ports:
+      - port: "4240" # default cilium agent health port
+        protocol: TCP
+  - toEntities:
+    - remote-node
+    toPorts:
+    - ports:
+      - port: "8472"
+        protocol: UDP
+
+  # rule 5: allow node to reach external DNS server
+  # use `rules` to get cilium DNS proxy to inspect external DNS responses
+  # this allows us to use FQDN-based policies on externally resolved domains
+  - toEntities:
+    - world
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      rules: 
+        dns:
+          - matchPattern: "*"
+
+  # rule 6: allow ICMP for cilium health checks 
+  - toEntities:
+    - cluster
+    - remote-node
+    - host
+    icmps:
+    - fields:
+      - type: EchoRequest
+        family: IPv4
+
+  # rule 7: allow FQDN-based request to https://google.com
+  - toFQDNs:
+    - matchName: "google.com"
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP</code></pre>
+        <hr>
+        <h2>troubleshooting through policy woes</h2>
+        <h3>hubble observe</h3>
+        <p>Network policies are a pain in the arse to manage, and you'll often find traffic being blocked for what feels like <i>no good reason</i>, or even more frustratingly find traffic riding past your carefully constructed policies untroubled.</p>
+        <p>Cilium installs <a href="https://github.com/cilium/hubble">hubble</a> onto each of the Cilium Pods to provide a means of troubleshooting these issues, and this should be the first port of call for viewing the effect (or lack of) of your deployed policies.</p>
+        <p>There's a great <a href="https://isovalent.com/blog/post/cilium-hubble-cheat-sheet-observability/">cheat sheet</a> Isovalent provides for using the hubble CLI to view network traffic and policies, and for multi-node clusters it's a good shout to use <a href="https://docs.cilium.io/en/stable/internals/hubble/#hubble-relay">hubble relay</a> to gain this pane-of-glass view for the whole cluster.</p>
+        <br><br><br>
+    </div>
+</body>
+</html>
+
