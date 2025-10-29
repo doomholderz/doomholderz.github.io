@@ -74,6 +74,8 @@
 
         <h3>the policies in practice</h3>
           <p><b><i>These policies assume the presence of Cilium as the cluster CNI of choice. Mileage with other CNIs may vary.</i></b></p>
+          <p>Check out <a href="https://github.com/doomholderz/one-network-policy-after-another/tree/main">this repo</a> for the following policies and associated resources to get this setup in a Kind cluster.</p>
+          <hr>
           <p><code>default-deny.yaml</code> (baseline policy)</p>
           <p>For our foundation policy, we want a one-time deploy of a cluster-wide 'default-deny' policy. This blocks all traffic (aside from egress to kube-dns) and enforces that all subsequent traffic flows must be explicitly declared.</p>
           <pre>
